@@ -23,15 +23,15 @@
       </p>
       <div class="flex flex-wrap gap-3">
         <div class="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-xl border border-emerald-100">
-          <div class="text-xl font-bold text-emerald-800">⭐ 4.8</div>
+          <div class="text-xl font-bold text-emerald-800">{{ number_format($averageRating ?? 0, 1) }}</div>
           <div class="text-[10px] text-emerald-600">Rating Pengunjung</div>
         </div>
         <div class="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-xl border border-emerald-100">
-          <div class="text-xl font-bold text-emerald-800">🌿 50+</div>
+          <div class="text-xl font-bold text-emerald-800">50+</div>
           <div class="text-[10px] text-emerald-600">Aktivitas Seru</div>
         </div>
         <div class="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-xl border border-emerald-100">
-          <div class="text-xl font-bold text-emerald-800">👥 10K+</div>
+          <div class="text-xl font-bold text-emerald-800">{{ number_format($monthlyVisitors ?? 0) }}</div>
           <div class="text-[10px] text-emerald-600">Pengunjung/Bulan</div>
         </div>
       </div>

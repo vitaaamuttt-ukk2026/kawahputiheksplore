@@ -48,6 +48,7 @@
                         <th class="text-left px-4 py-3 text-xs font-semibold text-on-surface-variant uppercase">Total</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-on-surface-variant uppercase">Bukti Bayar</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-on-surface-variant uppercase">Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-on-surface-variant uppercase">Alasan &amp; Kontak</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-on-surface-variant uppercase">Aksi</th>
                     </tr>
                 </thead>
@@ -110,7 +111,7 @@
         
         @if($foundPath)
             <a href="{{ $foundPath }}" target="_blank" class="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1 rounded text-sm font-medium">
-                <span>📄</span> Lihat
+                Lihat
             </a>
         @else
             <span class="text-red-500 text-xs">File hilang</span>
@@ -135,6 +136,37 @@
                                     <span class="material-symbols-outlined text-[12px]">cancel</span>
                                     Dibatalkan
                                 </span>
+                            @elseif($booking->status === 'verified')
+                                <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-[11px] font-bold rounded-full">
+                                    <span class="material-symbols-outlined text-[12px]">verified</span>
+                                    Terverifikasi
+                                </span>
+                            @elseif($booking->status === 'refund_requested')
+                                <span class="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-[11px] font-bold rounded-full">
+                                    <span class="material-symbols-outlined text-[12px]">request_quote</span>
+                                    Refund Diajukan
+                                </span>
+                            @elseif($booking->status === 'refunded')
+                                <span class="text-xs text-gray-600">Refund Selesai</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            @if($booking->status === 'refund_requested' && $booking->refund_reason)
+                                <div class="text-xs text-on-surface-variant mb-1">
+                                    <span class="material-symbols-outlined text-[12px] text-orange-500 align-middle mr-1">info</span>
+                                    <span class="font-semibold text-orange-800">Alasan:</span> <span class="text-orange-700">{{ $booking->refund_reason }}</span>
+                                </div>
+                                <div class="text-xs text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-[12px] text-blue-500 align-middle mr-1">phone</span>
+                                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $booking->no_hp) }}" target="_blank" class="text-blue-600 hover:underline font-medium">{{ $booking->no_hp }}</a>
+                                </div>
+                            @elseif($booking->status === 'refunded' && $booking->refund_reason)
+                                <div class="text-xs text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-[12px] text-gray-500 align-middle mr-1">info</span>
+                                    <span class="font-semibold text-gray-700">Alasan:</span> <span class="text-gray-600">{{ $booking->refund_reason }}</span>
+                                </div>
+                            @else
+                                <span class="text-xs text-on-surface-variant">-</span>
                             @endif
                         </td>
                         <td class="px-4 py-3">
@@ -154,15 +186,32 @@
                                             Batal
                                         </button>
                                     </form>
+                                @elseif($booking->status === 'refund_requested')
+                                    <form action="{{ route('admin.booking.refund.approve', $booking->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin menyetujui refund ini? Dana akan dikembalikan kepada pengunjung.')">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[14px]">check</span>
+                                            Setujui Refund
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('admin.booking.refund.reject', $booking->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin menolak refund ini? Tiket akan tetap berlaku.')">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[14px]">close</span>
+                                            Tolak Refund
+                                        </button>
+                                    </form>
                                 @else
-                                    <span class="text-xs text-on-surface-variant">✓ Selesai</span>
+                                    <span class="text-xs text-on-surface-variant">Selesai</span>
                                 @endif
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-on-surface-variant">
+                        <td colspan="9" class="px-4 py-8 text-center text-on-surface-variant">
                             <span class="material-symbols-outlined text-4xl opacity-30 block mb-2">inbox</span>
                             Belum ada data booking
                         </td>

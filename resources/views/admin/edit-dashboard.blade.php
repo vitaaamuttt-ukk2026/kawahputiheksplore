@@ -122,7 +122,7 @@
                     <div class="text-emerald-600 text-sm">{{ $hotel['price'] }}</div>
                     <div class="text-xs text-gray-500">{{ $hotel['desc'] }}</div>
                     @if(!empty($hotel['link']))
-                        <a href="{{ $hotel['link'] }}" target="_blank" class="inline-block mt-2 text-xs text-blue-600 hover:underline font-medium">🔗 Lihat Detail</a>
+                        <a href="{{ $hotel['link'] }}" target="_blank" class="inline-block mt-2 text-xs text-blue-600 hover:underline font-medium">Lihat Detail</a>
                     @endif
                 </div>
                 <form method="POST" action="{{ route('admin.dashboard.deleteHotel', $index) }}" class="absolute top-2 right-2" onsubmit="return confirm('Hapus?')">
@@ -162,19 +162,42 @@
             </h3>
         </div>
         <div class="p-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                @forelse($gallery as $index => $img)
-                <div class="relative rounded-xl overflow-hidden aspect-square border border-gray-200">
-                    <img src="{{ $img }}" class="w-full h-full object-cover">
-                    <form method="POST" action="{{ route('admin.dashboard.deleteGallery', $index) }}" class="absolute top-2 right-2" onsubmit="return confirm('Hapus?')">
-                        @csrf
-                        <button class="bg-red-500 text-white rounded-full w-6 h-6 text-xs">×</button>
-                    </form>
+            <div class="relative rounded-2xl overflow-hidden cursor-pointer group max-w-xs mb-6" onclick="openAlbum()">
+                <img src="{{ $gallery[0] ?? '' }}" class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500">
+                <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <div class="text-white text-center">
+                        <span class="material-symbols-outlined text-4xl">photo_library</span>
+                        <div class="font-bold">{{ count($gallery) }} Foto</div>
+                        <div class="text-xs">Klik untuk kelola album</div>
+                    </div>
                 </div>
-                @empty
-                <div class="col-span-full text-center py-8 bg-gray-50 rounded-xl text-gray-400 text-sm">Belum ada galeri.</div>
-                @endforelse
             </div>
+            <!-- Modal Album -->
+            <div id="albumModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeAlbum()">
+                <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">Kelola Album Galeri</h3>
+                        <button onclick="closeAlbum()" class="text-2xl leading-none">&times;</button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        @forelse($gallery as $index => $img)
+                        <div class="relative rounded-xl overflow-hidden aspect-square border border-gray-200">
+                            <img src="{{ $img }}" class="w-full h-full object-cover">
+                            <form method="POST" action="{{ route('admin.dashboard.deleteGallery', $index) }}" class="absolute top-2 right-2" onsubmit="return confirm('Hapus?')">
+                                @csrf
+                                <button class="bg-red-500 text-white rounded-full w-6 h-6 text-xs">×</button>
+                            </form>
+                        </div>
+                        @empty
+                        <div class="col-span-full text-center py-8 bg-gray-50 rounded-xl text-gray-400 text-sm">Belum ada galeri.</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            <script>
+                function openAlbum(){var m=document.getElementById('albumModal');m.classList.remove('hidden');m.classList.add('flex');}
+                function closeAlbum(){var m=document.getElementById('albumModal');m.classList.add('hidden');m.classList.remove('flex');}
+            </script>
             
             <form method="POST" action="{{ route('admin.dashboard.addGallery') }}" enctype="multipart/form-data" class="border-t pt-4 flex gap-3">
                 @csrf

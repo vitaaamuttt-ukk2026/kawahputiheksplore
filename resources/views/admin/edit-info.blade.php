@@ -78,7 +78,7 @@
     </form>
 
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-        <p class="text-blue-800 text-sm">💡 Ingin mengubah <strong>Foto Header, Spot Foto, Hotel, atau Galeri</strong>? <br> Silakan klik menu <strong>"Edit Dashboard"</strong> di sidebar sebelah kiri.</p>
+        <p class="text-blue-800 text-sm">Ingin mengubah <strong>Foto Header, Spot Foto, Hotel, atau Galeri</strong>? <br> Silakan klik menu <strong>"Edit Dashboard"</strong> di sidebar sebelah kiri.</p>
     </div>
 </div>
 @endsection

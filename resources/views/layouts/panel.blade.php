@@ -105,9 +105,9 @@
                         <span class="material-symbols-outlined">settings</span>
                         <span class="link-text">Operasional</span>
                     </a>
-                    <a href="{{ route('pengelola.analitik') }}" class="sidebar-link {{ request()->routeIs('pengelola.analitik') ? 'active' : '' }}">
-                        <span class="material-symbols-outlined">analytics</span>
-                        <span class="link-text">Analitik</span>
+                    <a href="{{ route('pengelola.laporan') }}" class="sidebar-link {{ request()->routeIs('pengelola.laporan') ? 'active' : '' }}">
+                        <span class="material-symbols-outlined">description</span>
+                        <span class="link-text">Laporan</span>
                     </a>
                     <a href="{{ route('pengelola.pengaturan') }}" class="sidebar-link {{ request()->routeIs('pengelola.pengaturan') ? 'active' : '' }}">
                         <span class="material-symbols-outlined">tune</span>

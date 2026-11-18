@@ -80,7 +80,7 @@
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -91,6 +91,7 @@
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Paket Wisata</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Bayar</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Bukti Bayar</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
@@ -153,6 +154,34 @@
                             @endif
                         </td>
                         <td class="px-4 py-3">
+                            @if($booking->bukti_pembayaran)
+                                @php
+                                    $paths = [
+                                        'storage/' . $booking->bukti_pembayaran,
+                                        $booking->bukti_pembayaran,
+                                        'bukti_pembayaran/' . basename($booking->bukti_pembayaran),
+                                    ];
+                                    $foundPath = null;
+                                    foreach ($paths as $path) {
+                                        if (file_exists(public_path($path))) {
+                                            $foundPath = asset($path);
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                @if($foundPath)
+                                    <a href="{{ $foundPath }}" target="_blank" class="inline-flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium px-2 py-1 rounded border border-blue-200 transition">
+                                        <span class="material-symbols-outlined text-[14px]">receipt_long</span>
+                                        Lihat
+                                    </a>
+                                @else
+                                    <span class="text-xs text-red-500">File hilang</span>
+                                @endif
+                            @else
+                                <span class="text-xs text-gray-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
     <div class="flex items-center gap-2">
         @if($booking->status === 'paid')
             @if($booking->status_kunjungan === 'selesai')
@@ -189,7 +218,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="9" class="px-4 py-8 text-center text-gray-500">
                             <span class="material-symbols-outlined text-4xl opacity-30 block mb-2">inbox</span>
                             <p class="text-sm">Tidak ada data reservasi</p>
                             @if($search)

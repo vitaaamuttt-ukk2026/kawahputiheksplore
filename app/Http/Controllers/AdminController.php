@@ -80,6 +80,34 @@ class AdminController extends Controller
         }
     }
 
+    public function approveRefund($id): RedirectResponse
+    {
+        try {
+            $booking = Booking::where('id', $id)->where('status', 'refund_requested')->firstOrFail();
+            $booking->update([
+                'status' => 'refunded',
+                'refunded_at' => now(),
+            ]);
+            return back()->with('success', 'Refund disetujui. Dana akan dikembalikan kepada pengunjung.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menyetujui refund: ' . $e->getMessage());
+        }
+    }
+
+    public function rejectRefund($id): RedirectResponse
+    {
+        try {
+            $booking = Booking::where('id', $id)->where('status', 'refund_requested')->firstOrFail();
+            $booking->update([
+                'status' => 'paid',
+                'refund_reason' => null,
+            ]);
+            return back()->with('success', 'Permintaan refund ditolak. Tiket tetap berlaku.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menolak refund: ' . $e->getMessage());
+        }
+    }
+
     public function pengelola(): View
     {
         $pengelola = User::where('role', 'pengelola')->orderBy('name')->get();

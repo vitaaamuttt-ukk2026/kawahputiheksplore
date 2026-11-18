@@ -43,7 +43,7 @@
                 <h3 class="font-bold text-gray-800">Lokasi</h3>
             </div>
             <p class="text-sm text-gray-600 mb-3 leading-relaxed">{{ $info['lokasi'] }}</p>
-            <a href="https://goo.gl/maps/kawahputih" target="_blank" class="inline-flex items-center gap-1 text-sm text-emerald-600 font-semibold hover:underline">
+            <a href="https://maps.app.goo.gl/Nsc8MD5rVsDFAVkUA" target="_blank" class="inline-flex items-center gap-1 text-sm text-emerald-600 font-semibold hover:underline">
                 <span class="material-symbols-outlined text-sm">map</span> Buka di Google Maps
             </a>
         </div>
@@ -73,9 +73,19 @@
                 @endforeach
             </div>
         </div>
+        <!-- Kontak -->
+        <div class="bg-white rounded-2xl border border-gray-200 p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-emerald-600 text-2xl">contact_phone</span>
+                <h3 class="font-bold text-gray-800">Informasi Kontak</h3>
+            </div>
+            <div class="text-sm text-gray-600 space-y-1">
+                <p><strong>Telepon:</strong> (62) 895350248136</p>
+                <p><strong>Email:</strong> jo.adventureinfo@gmail.com</p>
+                <p><strong>Website:</strong> www.ciwideyoutbound.com</p>
+            </div>
+        </div>
     </div>
-
-    <!-- Harga Tiket -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
             <span class="material-symbols-outlined text-emerald-600">payments</span>
@@ -140,6 +150,13 @@
                     @if(!empty($hotel['desc']))
                         <p class="text-gray-500 text-xs mt-2 line-clamp-2">{{ $hotel['desc'] }}</p>
                     @endif
+                    @if(!empty($hotel['link']))
+                        <a href="{{ $hotel['link'] }}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1 mt-3 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline">
+                            <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                            Lihat Detail / Booking
+                        </a>
+                    @endif
                 </div>
             </div>
             @endforeach
@@ -168,21 +185,54 @@
     </div>
     @endif
 
-    <!-- Galeri Foto -->
+    <!-- Galeri Foto (Album) -->
     @if(count($info['gallery']) > 0)
     <div class="mb-8">
         <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <span class="material-symbols-outlined text-emerald-600">gallery_thumbnail</span>
+            <span class="material-symbols-outlined text-emerald-600">photo_library</span>
             Galeri Foto Kawah Putih
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @foreach($info['gallery'] as $img)
-            <div class="relative rounded-xl overflow-hidden aspect-square group cursor-pointer">
-                <img src="{{ $img }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+        <div class="relative rounded-2xl overflow-hidden cursor-pointer group max-w-xs" onclick="openAlbum()">
+            <img src="{{ $info['gallery'][0] }}" class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <div class="text-white text-center">
+                    <span class="material-symbols-outlined text-5xl">photo_library</span>
+                    <div class="font-bold text-lg">{{ count($info['gallery']) }} Foto</div>
+                    <div class="text-sm">Klik untuk buka album</div>
+                </div>
             </div>
-            @endforeach
         </div>
     </div>
+    <!-- Modal Album -->
+    <div id="albumModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeAlbum()">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">Album Galeri</h3>
+                <button onclick="closeAlbum()" class="text-2xl leading-none">&times;</button>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                @foreach($info['gallery'] as $img)
+                <img src="{{ $img }}" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-80" onclick="viewPhoto(this.src)">
+                @endforeach
+            </div>
+        </div>
+    </div>
+    <div id="photoModal" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center p-4" onclick="closePhoto()">
+        <button onclick="event.stopPropagation();prevPhoto()" class="absolute left-4 text-white text-4xl">&lsaquo;</button>
+        <img id="photoView" src="" class="max-w-full max-h-full rounded-lg">
+        <button onclick="event.stopPropagation();nextPhoto()" class="absolute right-4 text-white text-4xl">&rsaquo;</button>
+    </div>
+    <script>
+        var galleryImages = [@foreach($info['gallery'] as $img)"{{ $img }}",@endforeach];
+        var photoIndex = 0;
+        function openAlbum(){document.getElementById('albumModal').classList.remove('hidden');document.getElementById('albumModal').classList.add('flex');}
+        function closeAlbum(){document.getElementById('albumModal').classList.add('hidden');document.getElementById('albumModal').classList.remove('flex');}
+        function viewPhoto(src){photoIndex=galleryImages.indexOf(src);if(photoIndex<0)photoIndex=0;showPhoto();document.getElementById('photoModal').classList.remove('hidden');document.getElementById('photoModal').classList.add('flex');}
+        function showPhoto(){document.getElementById('photoView').src=galleryImages[photoIndex];}
+        function prevPhoto(){photoIndex=(photoIndex-1+galleryImages.length)%galleryImages.length;showPhoto();}
+        function nextPhoto(){photoIndex=(photoIndex+1)%galleryImages.length;showPhoto();}
+        function closePhoto(){document.getElementById('photoModal').classList.add('hidden');document.getElementById('photoModal').classList.remove('flex');}
+    </script>
     @endif
 
 </section>

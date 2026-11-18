@@ -21,7 +21,9 @@ class Booking extends Model
     'status',
     'status_kunjungan',
     'paid_at',
-    'selesai',    
+    'selesai',
+    'refund_reason',
+    'refunded_at',
 ];
 
     protected $casts = [

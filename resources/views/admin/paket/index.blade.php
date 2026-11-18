@@ -62,7 +62,7 @@
                             </a>
                             
                             <!-- FORM HAPUS DENGAN KONFIRMASI -->
-                            <form action="{{ route('admin.paket.destroy', $paket->id) }}" method="POST" class="inline" onsubmit="return confirm('⚠️ Yakin ingin menghapus paket wisata ini?\n\nTindakan ini tidak dapat dibatalkan.');">
+                            <form action="{{ route('admin.paket.destroy', $paket->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus paket wisata ini?\n\nTindakan ini tidak dapat dibatalkan.');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Hapus Paket">

@@ -11,9 +11,7 @@ class OperasionalSetting extends Model
     protected $fillable = [
         'suhu', 'kondisi_cuaca', 'status_angin', 'peringatan_cuaca',
         'kuota_pengunjung', 'pengunjung_aktif', 'status_suaran',
-        'buletin_lapangan', 'status_gerbang', 'zona_terumbu_karang',
-        'zona_terumbu_max', 'zona_mangrove', 'zona_mangrove_max',
-        'status_dermaga', 'info_dermaga',
+        'status_gerbang', 'status_dermaga', 'info_dermaga',
     ];
 
     // Ambil data operasional (hanya ada 1 baris)
@@ -28,10 +26,6 @@ class OperasionalSetting extends Model
             'pengunjung_aktif' => 0,
             'status_suaran' => 'Normal',
             'status_gerbang' => 'Buka Normal',
-            'zona_terumbu_karang' => 320,
-            'zona_terumbu_max' => 400,
-            'zona_mangrove' => 180,
-            'zona_mangrove_max' => 250,
             'status_dermaga' => 'Aktif',
         ]);
     }

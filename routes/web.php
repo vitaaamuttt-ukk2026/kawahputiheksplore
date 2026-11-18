@@ -6,6 +6,7 @@ use App\Http\Controllers\PengelolaController;
 use App\Http\Controllers\PanelAuthController;
 use App\Http\Controllers\PengunjungController;
 use App\Http\Controllers\PengunjungAuthController;
+use App\Http\Controllers\ReviewController;
 use App\Models\OperasionalSetting;
 
 // ==========================================
@@ -27,7 +28,7 @@ Route::get('/api/operasional', function() {
 })->name('api.operasional');
 
 // ==========================================
-// 3. ROUTE AUTH PENGUNJUNG (LOGIN/REGISTER)
+// 3. ROUTE AUTH PENGUNJUNG (KHUSUS YANG BELUM LOGIN / GUEST)
 // ==========================================
 Route::middleware('guest')->group(function () {
     Route::get('/pengunjung/login', [PengunjungAuthController::class, 'showLogin'])->name('pengunjung.login');
@@ -35,6 +36,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/pengunjung/register', [PengunjungAuthController::class, 'showRegister'])->name('pengunjung.register');
     Route::post('/pengunjung/register', [PengunjungAuthController::class, 'register']);
 });
+
 Route::post('/pengunjung/logout', [PengunjungAuthController::class, 'logout'])->name('pengunjung.logout');
 
 // ==========================================
@@ -46,6 +48,8 @@ Route::middleware(['auth.pengunjung'])->group(function () {
     Route::post('/pembayaran/proses', [PengunjungController::class, 'prosesPembayaran'])->name('pengunjung.pembayaran.proses');
     Route::get('/tiket', [PengunjungController::class, 'tiket'])->name('pengunjung.tiket');
     Route::get('/api/check-status', [PengunjungController::class, 'checkStatus'])->name('api.check-status');
+    Route::put('/booking/{id}/refund', [PengunjungController::class, 'requestRefund'])->name('pengunjung.booking.refund');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
 // ==========================================
@@ -73,6 +77,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     Route::post('/booking/{id}/verify', [AdminController::class, 'verifyBooking'])->name('booking.verify');
     Route::post('/booking/{id}/cancel', [AdminController::class, 'cancelBooking'])->name('booking.cancel');
+    Route::put('/booking/{id}/refund/approve', [AdminController::class, 'approveRefund'])->name('booking.refund.approve');
+    Route::put('/booking/{id}/refund/reject', [AdminController::class, 'rejectRefund'])->name('booking.refund.reject');
     
     Route::get('/pengelola', [AdminController::class, 'pengelola'])->name('pengelola');
     Route::post('/pengelola', [AdminController::class, 'storePengelola'])->name('pengelola.store');
@@ -104,22 +110,23 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/dashboard/hotel/{index}/delete', [AdminController::class, 'deleteDashboardHotel'])->name('dashboard.deleteHotel');
     Route::post('/dashboard/gallery', [AdminController::class, 'addDashboardGallery'])->name('dashboard.addGallery');
     Route::post('/dashboard/gallery/{index}/delete', [AdminController::class, 'deleteDashboardGallery'])->name('dashboard.deleteGallery');
+    
     // Test Upload Sederhana
-Route::get('/test-upload', function() {
-    return view('admin.test-upload');
-})->name('admin.test-upload');
+    Route::get('/test-upload', function() {
+        return view('admin.test-upload');
+    })->name('admin.test-upload');
 
-Route::post('/test-upload', function(\Illuminate\Http\Request $request) {
-    if (!$request->hasFile('foto')) {
-        return back()->with('error', 'File tidak terkirim. Cek enctype form!');
-    }
-    
-    $file = $request->file('foto');
-    $nama = time() . '.' . $file->getClientOriginalExtension();
-    $file->move(public_path('hero'), $nama);
-    
-    return back()->with('success', 'Berhasil! File: ' . $nama);
-})->name('admin.test-upload.post');
+    Route::post('/test-upload', function(\Illuminate\Http\Request $request) {
+        if (!$request->hasFile('foto')) {
+            return back()->with('error', 'File tidak terkirim. Cek enctype form!');
+        }
+        
+        $file = $request->file('foto');
+        $nama = time() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('hero'), $nama);
+        
+        return back()->with('success', 'Berhasil! File: ' . $nama);
+    })->name('admin.test-upload.post');
 
     // Manage Harga & Tips (Dinamis)
     Route::get('/prices', [AdminController::class, 'managePrices'])->name('prices');
@@ -131,7 +138,7 @@ Route::post('/test-upload', function(\Illuminate\Http\Request $request) {
     Route::post('/tips', [AdminController::class, 'addTip'])->name('tips.add');
     Route::post('/tips/{id}', [AdminController::class, 'updateTip'])->name('tips.update');
     Route::post('/tips/{id}/delete', [AdminController::class, 'deleteTip'])->name('tips.delete');
-    });
+});
 
 // ==========================================
 // 7. ROUTE KHUSUS PENGELOLA
@@ -141,7 +148,8 @@ Route::middleware(['auth', 'role:pengelola'])->prefix('pengelola')->name('pengel
     Route::get('/reservasi', [PengelolaController::class, 'reservasi'])->name('reservasi');
     Route::get('/operasional', [PengelolaController::class, 'operasional'])->name('operasional');
     Route::post('/operasional/update', [PengelolaController::class, 'updateOperasional'])->name('operasional.update');
-    Route::get('/analitik', [PengelolaController::class, 'analitik'])->name('analitik');
+    Route::get('/laporan', [PengelolaController::class, 'laporan'])->name('laporan');
+    Route::get('/laporan/excel', [PengelolaController::class, 'laporanExcel'])->name('laporan.excel');
     Route::get('/pengaturan', [PengelolaController::class, 'pengaturan'])->name('pengaturan');
     Route::post('/pengaturan', [PengelolaController::class, 'updatePengaturan'])->name('pengaturan.update');
     Route::post('/reservasi/{id}/verify', [PengelolaController::class, 'verifyReservasi'])->name('reservasi.verify');

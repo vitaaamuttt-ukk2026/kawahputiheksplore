@@ -8,6 +8,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Seeder kosong dulu, nanti bisa ditambahkan setelah file AdminSeeder dibuat
+        $this->call(ReviewSeeder::class);
     }
 }

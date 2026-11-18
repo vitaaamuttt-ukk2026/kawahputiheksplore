@@ -62,6 +62,18 @@
               $statusText = 'Dibatalkan';
               $statusColor = 'bg-red-100 text-red-700 border-red-200';
               $icon = 'cancel';
+          } elseif ($booking->status === 'verified') {
+              $statusText = 'Terverifikasi';
+              $statusColor = 'bg-green-100 text-green-700 border-green-200';
+              $icon = 'verified';
+          } elseif ($booking->status === 'refund_requested') {
+              $statusText = 'Refund Diajukan';
+              $statusColor = 'bg-orange-100 text-orange-700 border-orange-200';
+              $icon = 'request_quote';
+          } elseif ($booking->status === 'refunded') {
+              $statusText = 'Refund Selesai';
+              $statusColor = 'bg-gray-100 text-gray-700 border-gray-200';
+              $icon = 'money_back';
           } else {
               $statusText = ucfirst($booking->status);
               $statusColor = 'bg-gray-100 text-gray-700 border-gray-200';
@@ -141,8 +153,29 @@
                 <span class="material-symbols-outlined text-[18px]">pending</span>
                 Menunggu Verifikasi Admin
               </span>
+            @elseif($booking->status === 'refund_requested')
+              <span class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-semibold border border-orange-200">
+                <span class="material-symbols-outlined text-[18px]">request_quote</span>
+                Refund Diajukan
+              </span>
+            @elseif($booking->status === 'refunded')
+              <span class="text-xs text-gray-600">Refund Selesai</span>
             @endif
           </div>
+
+          @if(in_array($booking->status, ['paid', 'verified']))
+            <form action="{{ route('pengunjung.booking.refund', $booking->id) }}" method="POST" onsubmit="return confirm('Yakin ingin mengajukan refund? Tiket akan dibatalkan dan dana akan dikembalikan setelah disetujui admin.')" class="mt-3 pt-3 border-t border-surface-container-high">
+              @csrf
+              @method('PUT')
+              <div class="flex flex-wrap gap-2">
+                <input type="text" name="refund_reason" placeholder="Alasan refund (contoh: sakit, hujan, tidak bisa datang)" required class="flex-1 min-w-[200px] border border-surface-container-high rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                  Ajukan Refund
+                </button>
+              </div>
+              <p class="text-xs text-red-500 mt-1">Tiket akan dibatalkan. Dana dikembalikan setelah persetujuan admin.</p>
+            </form>
+          @endif
         </div>
       </div>
     @empty
@@ -195,7 +228,7 @@ setInterval(async function() {
 
         // Jika ada perubahan, tampilkan notifikasi dan refresh halaman dengan mulus
         if (hasChanged) {
-            showNotification("🎉 Status tiket Anda diperbarui!");
+            showNotification("Status tiket Anda diperbarui!");
             setTimeout(() => {
                 window.location.reload();
             }, 1500); // Refresh setelah 1.5 detik agar user melihat notifikasi
