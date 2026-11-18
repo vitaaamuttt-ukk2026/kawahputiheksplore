@@ -150,6 +150,7 @@ Route::middleware(['auth', 'role:pengelola'])->prefix('pengelola')->name('pengel
     Route::post('/operasional/update', [PengelolaController::class, 'updateOperasional'])->name('operasional.update');
     Route::get('/laporan', [PengelolaController::class, 'laporan'])->name('laporan');
     Route::get('/laporan/excel', [PengelolaController::class, 'laporanExcel'])->name('laporan.excel');
+    Route::get('/laporan/pdf', [PengelolaController::class, 'laporanPdf'])->name('laporan.pdf');
     Route::get('/pengaturan', [PengelolaController::class, 'pengaturan'])->name('pengaturan');
     Route::post('/pengaturan', [PengelolaController::class, 'updatePengaturan'])->name('pengaturan.update');
     Route::post('/reservasi/{id}/verify', [PengelolaController::class, 'verifyReservasi'])->name('reservasi.verify');

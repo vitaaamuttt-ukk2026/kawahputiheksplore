@@ -46,14 +46,16 @@
         Tampilkan
     </button>
 
-    <a href="{{ route('pengelola.laporan.excel', array_filter(['periode' => $periode, 'bulan' => $bulan, 'tahun' => $tahun])) }}" class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2 shadow-lg shadow-emerald-200">
-        <span class="material-symbols-outlined text-lg">download</span>
-        Unduh Semua ({{
-            $periode === 'bulanan' ? '12 Bulan' :
-            ($periode === 'tahunan' ? '5 Tahun' :
-            ($periode === 'mingguan' ? 'Semua Minggu' : 'Semua Hari'))
-        }})
-    </a>
+    <details class="relative ml-auto">
+        <summary class="cursor-pointer list-none bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition flex items-center gap-2 shadow-lg shadow-emerald-200">
+            <span class="material-symbols-outlined text-lg">download</span> Unduh Laporan
+            <span class="material-symbols-outlined text-lg">expand_more</span>
+        </summary>
+        <div class="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-1 shadow-xl">
+            <a href="{{ route('pengelola.laporan.excel', array_filter(['periode' => $periode, 'bulan' => $bulan, 'tahun' => $tahun])) }}" class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50">Unduh Excel (.xlsx)</a>
+            <a href="{{ route('pengelola.laporan.pdf', array_filter(['periode' => $periode, 'bulan' => $bulan, 'tahun' => $tahun])) }}" class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50">Unduh PDF</a>
+        </div>
+    </details>
 </form>
 
 <!-- Tab Navigation -->
@@ -150,10 +152,13 @@
                     <td class="px-4 py-3 text-right text-gray-600">{{ number_format($row['selesai'], 0, ',', '.') }}</td>
                     <td class="px-4 py-3 text-right text-gray-600">{{ number_format($row['ulasan'], 0, ',', '.') }}</td>
                     <td class="px-4 py-3 text-center">
-                        <a href="{{ route('pengelola.laporan.excel', ['start' => $row['start_date'], 'end' => $row['end_date']]) }}"
-                           class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-2 py-1 rounded border border-emerald-200 transition">
-                            Unduh
-                        </a>
+                        <details class="relative inline-block text-left">
+                            <summary class="cursor-pointer list-none text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-2 py-1 rounded border border-emerald-200 transition">Unduh ▾</summary>
+                            <div class="absolute right-0 z-10 mt-1 w-36 rounded-lg border border-gray-200 bg-white p-1 shadow-lg">
+                                <a class="block rounded px-2 py-1.5 text-left hover:bg-emerald-50" href="{{ route('pengelola.laporan.excel', ['start' => $row['start_date'], 'end' => $row['end_date'], 'periode' => $periode, 'bulan' => $bulan, 'tahun' => $tahun]) }}">Excel (.xlsx)</a>
+                                <a class="block rounded px-2 py-1.5 text-left hover:bg-emerald-50" href="{{ route('pengelola.laporan.pdf', ['start' => $row['start_date'], 'end' => $row['end_date'], 'periode' => $periode, 'bulan' => $bulan, 'tahun' => $tahun]) }}">PDF</a>
+                            </div>
+                        </details>
                     </td>
                 </tr>
                 @empty

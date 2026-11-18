@@ -243,41 +243,63 @@ class PengelolaController extends Controller
             $fileName = 'Laporan-' . ucfirst($periode) . '-' . now()->format('YmdHis') . '.xlsx';
         }
 
+        $totals = [0, 0, 0, 0, 0];
+        foreach ($rows as $row) {
+            for ($i = 1; $i <= 5; $i++) {
+                $totals[$i - 1] += (int) $row[$i];
+            }
+        }
+        $xmlEscape = fn ($value) => htmlspecialchars((string) $value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $inlineCell = fn ($ref, $value, $style = 0) => '<c r="' . $ref . '" t="inlineStr"' . ($style ? ' s="' . $style . '"' : '') . '><is><t>' . $xmlEscape($value) . '</t></is></c>';
+        $numberCell = fn ($ref, $value, $style = 0) => '<c r="' . $ref . '"' . ($style ? ' s="' . $style . '"' : '') . '><v>' . (int) $value . '</v></c>';
+        $lastDataRow = 6 + count($rows);
+        $totalRow = $lastDataRow + 1;
         $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetData>
-    <row r="1">
-      <c r="A1" t="inlineStr"><is><t>Periode</t></is></c>
-      <c r="B1" t="inlineStr"><is><t>Booking</t></is></c>
-      <c r="C1" t="inlineStr"><is><t>Pengunjung</t></is></c>
-      <c r="D1" t="inlineStr"><is><t>Pendapatan</t></is></c>
-      <c r="E1" t="inlineStr"><is><t>Kunjungan Selesai</t></is></c>
-      <c r="F1" t="inlineStr"><is><t>Ulasan</t></is></c>
-    </row>';
+  <dimension ref="A1:F' . $totalRow . '"/>
+  <sheetViews><sheetView workbookViewId="0"><pane ySplit="6" topLeftCell="A7" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+  <cols><col min="1" max="1" width="30" customWidth="1"/><col min="2" max="3" width="16" customWidth="1"/><col min="4" max="4" width="20" customWidth="1"/><col min="5" max="6" width="22" customWidth="1"/></cols>
+  <sheetData>';
+        $xml .= '<row r="1" ht="30" customHeight="1">' . $inlineCell('A1', 'LAPORAN KUNJUNGAN WISATA', 1) . '</row>';
+        $periodeLabel = ucfirst($periode) . ($periode === 'bulanan' ? ' - ' . $tahun : ($periode === 'harian' ? ' - ' . Carbon::parse($bulan . '-01')->translatedFormat('F Y') : ' - ' . $tahun));
+        $xml .= '<row r="2" ht="22" customHeight="1">' . $inlineCell('A2', 'Periode laporan: ' . $periodeLabel . ' | Dicetak: ' . now()->format('d-m-Y H:i'), 2) . '</row>';
+        $xml .= '<row r="4" ht="22" customHeight="1">' . $inlineCell('A4', 'TOTAL BOOKING', 3) . $numberCell('B4', $totals[0], 6)
+            . $inlineCell('C4', 'TOTAL PENGUNJUNG', 3) . $numberCell('D4', $totals[1], 6)
+            . $inlineCell('E4', 'TOTAL PENDAPATAN', 3) . $numberCell('F4', $totals[2], 7) . '</row>';
+        $xml .= '<row r="6" ht="28" customHeight="1">';
+        foreach (['Periode', 'Booking', 'Pengunjung', 'Pendapatan (Rp)', 'Kunjungan Selesai', 'Ulasan'] as $index => $heading) {
+            $xml .= $inlineCell(chr(65 + $index) . '6', $heading, 4);
+        }
+        $xml .= '</row>';
 
-        $rowNum = 2;
+        $rowNum = 7;
         foreach ($rows as $row) {
-            $xml .= '<row r="' . $rowNum . '">';
-            $xml .= '<c r="A' . $rowNum . '" t="inlineStr"><is><t>' . htmlspecialchars($row[0]) . '</t></is></c>';
-            $xml .= '<c r="B' . $rowNum . '" t="n"><v>' . (int) $row[1] . '</v></c>';
-            $xml .= '<c r="C' . $rowNum . '" t="n"><v>' . (int) $row[2] . '</v></c>';
-            $xml .= '<c r="D' . $rowNum . '" t="n"><v>' . (int) $row[3] . '</v></c>';
-            $xml .= '<c r="E' . $rowNum . '" t="n"><v>' . (int) $row[4] . '</v></c>';
-            $xml .= '<c r="F' . $rowNum . '" t="n"><v>' . (int) $row[5] . '</v></c>';
+            $xml .= '<row r="' . $rowNum . '" ht="21" customHeight="1">';
+            $xml .= $inlineCell('A' . $rowNum, $row[0], 5);
+            $xml .= $numberCell('B' . $rowNum, $row[1], 6) . $numberCell('C' . $rowNum, $row[2], 6);
+            $xml .= $numberCell('D' . $rowNum, $row[3], 7) . $numberCell('E' . $rowNum, $row[4], 6) . $numberCell('F' . $rowNum, $row[5], 6);
             $xml .= '</row>';
             $rowNum++;
         }
-
-        $xml .= '</sheetData></worksheet>';
+        $xml .= '<row r="' . $totalRow . '" ht="24" customHeight="1">' . $inlineCell('A' . $totalRow, 'TOTAL', 8);
+        foreach ($totals as $index => $value) {
+            $xml .= $numberCell(chr(66 + $index) . $totalRow, $value, $index === 2 ? 9 : 8);
+        }
+        $xml .= '</row></sheetData><mergeCells count="2"><mergeCell ref="A1:F1"/><mergeCell ref="A2:F2"/></mergeCells>';
+        if (count($rows) > 0) {
+            $xml .= '<autoFilter ref="A6:F' . $lastDataRow . '"/>';
+        }
+        $xml .= '</worksheet>';
 
         $rels = '<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 </Relationships>';
 
         $workbookRels = '<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>';
 
         $contentTypes = '<?xml version="1.0" encoding="UTF-8"?>
@@ -286,6 +308,7 @@ class PengelolaController extends Controller
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
 </Types>';
 
         $workbook = '<?xml version="1.0" encoding="UTF-8"?>
@@ -303,6 +326,7 @@ class PengelolaController extends Controller
         $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRels);
         $zip->addFromString('xl/workbook.xml', $workbook);
         $zip->addFromString('xl/worksheets/sheet1.xml', $xml);
+        $zip->addFromString('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0"/><numFmt numFmtId="165" formatCode="&quot;Rp &quot;#,##0"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="16"/><name val="Calibri"/></font><font><color rgb="FF64748B"/><sz val="10"/><name val="Calibri"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF047857"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2F3EC"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFE2E8F0"/></left><right style="thin"><color rgb="FFE2E8F0"/></right><top style="thin"><color rgb="FFE2E8F0"/></top><bottom style="thin"><color rgb="FFE2E8F0"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0"/><xf numFmtId="0" fontId="0" fillId="3" borderId="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1"/><xf numFmtId="3" fontId="0" fillId="0" borderId="1" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="1" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="3" borderId="1" applyFont="1" applyFill="1"/><xf numFmtId="165" fontId="1" fillId="3" borderId="1" applyFont="1" applyFill="1" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
         $zip->close();
 
         $contents = file_get_contents($zipPath);
@@ -312,6 +336,172 @@ class PengelolaController extends Controller
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
             'Content-Length'      => strlen($contents),
+        ]);
+    }
+
+    public function laporanPdf(Request $request)
+    {
+        $periode = $request->input('periode', 'bulanan');
+        if (!in_array($periode, ['harian', 'mingguan', 'bulanan', 'tahunan'], true)) {
+            $periode = 'bulanan';
+        }
+        $bulan = $request->input('bulan', now()->format('Y-m'));
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) $bulan)) {
+            $bulan = now()->format('Y-m');
+        }
+        $tahun = (int) $request->input('tahun', now()->year);
+        if ($tahun < 2000 || $tahun > 2100) {
+            $tahun = (int) now()->year;
+        }
+
+        $rows = $this->buildLaporanRows($periode, $bulan, $tahun);
+        $start = $request->input('start');
+        $end = $request->input('end');
+        if ($start && $end) {
+            $startDate = Carbon::parse($start)->startOfDay();
+            $endDate = Carbon::parse($end)->endOfDay();
+            $rows = array_values(array_filter($rows, function ($row) use ($startDate, $endDate) {
+                return Carbon::parse($row[6])->gte($startDate) && Carbon::parse($row[7])->lte($endDate);
+            }));
+        }
+
+        $lines = ['LAPORAN KUNJUNGAN WISATA', 'Periode: ' . ucfirst($periode) . ($periode === 'bulanan' ? ' - ' . $tahun : ''), '',
+            str_pad('Periode', 28) . str_pad('Booking', 10) . str_pad('Pengunjung', 12) . str_pad('Pendapatan', 16) . str_pad('Selesai', 10) . 'Ulasan',
+            str_repeat('-', 84)];
+        foreach ($rows as $row) {
+            $lines[] = str_pad(substr($row[0], 0, 27), 28) . str_pad((string) $row[1], 10) . str_pad((string) $row[2], 12)
+                . str_pad(number_format($row[3], 0, ',', '.'), 16) . str_pad((string) $row[4], 10) . (string) $row[5];
+        }
+        if (count($rows) === 0) {
+            $lines[] = 'Tidak ada data untuk periode ini.';
+        }
+
+        $pageRows = array_chunk($rows, 20);
+        if (count($pageRows) === 0) {
+            $pageRows = [[]];
+        }
+        $totals = [0, 0, 0, 0, 0];
+        foreach ($rows as $row) {
+            for ($i = 1; $i <= 5; $i++) {
+                $totals[$i - 1] += (int) $row[$i];
+            }
+        }
+        $objects = [1 => '<< /Type /Catalog /Pages 2 0 R >>',
+            3 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+            4 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'];
+        $pageRefs = [];
+        foreach ($pageRows as $index => $pageRowsList) {
+            $pageId = 5 + ($index * 2);
+            $streamId = $pageId + 1;
+            $pageRefs[] = $pageId . ' 0 R';
+            $stream = '';
+            $drawText = function (float $x, float $y, string $value, int $size = 9, bool $bold = false, string $color = '0.18 0.25 0.33') use (&$stream) {
+                $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
+                $value = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $value);
+                $stream .= $color . " rg BT /F" . ($bold ? '2' : '1') . ' ' . $size . ' Tf ' . $x . ' ' . $y . ' Td (' . $value . ") Tj ET\n";
+            };
+            $drawRect = function (float $x, float $y, float $width, float $height, string $color) use (&$stream) {
+                $stream .= $color . " rg " . $x . ' ' . $y . ' ' . $width . ' ' . $height . " re f\n";
+            };
+
+            $drawRect(0, 0, 842, 595, '1 1 1');
+            $drawRect(0, 500, 842, 95, '0.02 0.36 0.28');
+            $drawRect(40, 523, 44, 44, '0.08 0.63 0.45');
+            $drawText(49, 539, 'KP', 14, true, '1 1 1');
+            $drawText(102, 555, 'LAPORAN KUNJUNGAN WISATA', 18, true, '1 1 1');
+            $drawText(102, 536, 'Ringkasan kunjungan dan operasional', 9, false, '0.84 0.94 0.90');
+            $periodeLabel = $start && $end
+                ? Carbon::parse($start)->format('d M Y') . ' - ' . Carbon::parse($end)->format('d M Y')
+                : ucfirst($periode) . ($periode === 'bulanan' ? ' ' . $tahun : ($periode === 'harian' ? ' ' . Carbon::parse($bulan . '-01')->translatedFormat('F Y') : ' ' . $tahun));
+            $drawText(570, 555, 'PERIODE', 8, true, '0.72 0.88 0.81');
+            $drawText(570, 536, $periodeLabel, 12, true, '1 1 1');
+            $drawText(710, 555, 'TANGGAL CETAK', 8, true, '0.72 0.88 0.81');
+            $drawText(710, 536, now()->format('d-m-Y'), 11, true, '1 1 1');
+
+            if ($index === 0) {
+                $cards = [
+                    ['TOTAL BOOKING', number_format($totals[0], 0, ',', '.')],
+                    ['PENGUNJUNG', number_format($totals[1], 0, ',', '.')],
+                    ['PENDAPATAN', 'Rp ' . number_format($totals[2], 0, ',', '.')],
+                    ['SELESAI / ULASAN', number_format($totals[3], 0, ',', '.') . ' / ' . number_format($totals[4], 0, ',', '.')],
+                ];
+                foreach ($cards as $cardIndex => [$label, $value]) {
+                    $x = 40 + ($cardIndex * 193);
+                    $drawRect($x, 445, 180, 43, '0.94 0.97 0.95');
+                    $drawText($x + 12, 471, $label, 7, true, '0.35 0.45 0.40');
+                    $drawText($x + 12, 454, $value, 12, true, '0.02 0.36 0.28');
+                }
+            }
+
+            $hasMonthlyChart = $index === 0 && $periode === 'bulanan' && count($rows) > 0;
+            if ($hasMonthlyChart) {
+                $drawRect(40, 300, 762, 132, '0.98 0.99 0.98');
+                $drawText(54, 414, 'TREN PENGUNJUNG PER BULAN', 8, true, '0.18 0.31 0.25');
+                $maxVisitors = max(1, max(array_column($rows, 2)));
+                $chartBaseY = 326;
+                $drawRect(66, $chartBaseY, 706, 1, '0.75 0.82 0.78');
+                foreach ($rows as $chartIndex => $chartRow) {
+                    $barX = 78 + ($chartIndex * 57);
+                    $barHeight = max(2, ((int) $chartRow[2] / $maxVisitors) * 66);
+                    $drawRect($barX, $chartBaseY + 1, 25, $barHeight, '0.08 0.63 0.45');
+                    $drawText($barX - 2, 311, Carbon::parse($chartRow[6])->translatedFormat('M'), 7, false, '0.35 0.45 0.40');
+                    if ($chartRow[2] > 0) {
+                        $drawText($barX + 4, $chartBaseY + $barHeight + 5, (string) $chartRow[2], 6, false, '0.18 0.31 0.25');
+                    }
+                }
+            }
+
+            $tableTop = $index === 0 ? ($hasMonthlyChart ? 286 : 428) : 478;
+            $drawRect(40, $tableTop - 24, 762, 24, '0.02 0.36 0.28');
+            $drawText(50, $tableTop - 16, 'PERIODE', 8, true, '1 1 1');
+            $drawText(320, $tableTop - 16, 'BOOKING', 8, true, '1 1 1');
+            $drawText(400, $tableTop - 16, 'PENGUNJUNG', 8, true, '1 1 1');
+            $drawText(505, $tableTop - 16, 'PENDAPATAN', 8, true, '1 1 1');
+            $drawText(645, $tableTop - 16, 'SELESAI', 8, true, '1 1 1');
+            $drawText(730, $tableTop - 16, 'ULASAN', 8, true, '1 1 1');
+            $y = $tableTop - 42;
+            foreach ($pageRowsList as $rowIndex => $row) {
+                if ($rowIndex % 2 === 1) {
+                    $drawRect(40, $y - 6, 762, 20, '0.96 0.98 0.97');
+                }
+                $drawText(50, $y, mb_substr($row[0], 0, 38), 8);
+                $drawText(327, $y, (string) $row[1], 8);
+                $drawText(412, $y, (string) $row[2], 8);
+                $drawText(505, $y, 'Rp ' . number_format($row[3], 0, ',', '.'), 8);
+                $drawText(660, $y, (string) $row[4], 8);
+                $drawText(743, $y, (string) $row[5], 8);
+                $y -= 17;
+            }
+            if (count($rows) === 0) {
+                $drawText(50, $y, 'Tidak ada data untuk periode ini.', 9);
+            }
+            $drawRect(40, 28, 762, 1, '0.82 0.87 0.84');
+            $drawText(40, 14, 'Laporan internal | Kawah Putih', 8, false, '0.42 0.49 0.45');
+            $drawText(690, 14, 'Halaman ' . ($index + 1) . ' dari ' . count($pageRows), 8, false, '0.42 0.49 0.45');
+
+            $objects[$pageId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' . $streamId . ' 0 R >>';
+            $objects[$streamId] = '<< /Length ' . strlen($stream) . ">>\nstream\n" . $stream . "\nendstream";
+        }
+        $objects[2] = '<< /Type /Pages /Kids [' . implode(' ', $pageRefs) . '] /Count ' . count($pageRefs) . ' >>';
+        ksort($objects);
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0];
+        foreach ($objects as $id => $object) {
+            $offsets[$id] = strlen($pdf);
+            $pdf .= $id . " 0 obj\n" . $object . "\nendobj\n";
+        }
+        $xrefOffset = strlen($pdf);
+        $pdf .= "xref\n0 " . (count($objects) + 1) . "\n0000000000 65535 f \n";
+        for ($id = 1; $id <= count($objects); $id++) {
+            $pdf .= sprintf('%010d 00000 n ', $offsets[$id]) . "\n";
+        }
+        $pdf .= 'trailer << /Size ' . (count($objects) + 1) . " /Root 1 0 R >>\nstartxref\n" . $xrefOffset . "\n%%EOF";
+
+        $fileName = 'Laporan-' . ucfirst($periode) . '-' . now()->format('YmdHis') . '.pdf';
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Content-Length' => strlen($pdf),
         ]);
     }
 
